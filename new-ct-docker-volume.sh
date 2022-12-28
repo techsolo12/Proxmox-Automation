@@ -7,8 +7,8 @@ set -e    # Exit when any command fails
 # Constants
 #
 
-DEFAULT_VOLSIZE='8G'
-
+DEFAULT_VOLSIZE="8G"
+DEFAULT_FILESYS="ext4"
 
 #
 # Functions
@@ -26,9 +26,10 @@ function show_usage() {
     fi
     echo_err
     echo_err "Usage: $0 <ctid> [--attach]"
-    echo_err '    <ctid>              Proxmox unique ID of the CT.'
+    echo_err "    <ctid>              Proxmox unique ID of the CT."
+    echo_err "    --filesys           Filesystem to use, ext4 or xfs (default = $DEFAULT_FILESYS)."
     echo_err "    --volsize           Size of volume (default = $DEFAULT_VOLSIZE)."
-    echo_err '    --attach            Attach created volume to CT.'
+    echo_err "    --attach            Attach created volume to CT."
     echo_err
     exit 1
 }
@@ -39,11 +40,13 @@ function show_usage() {
 #
 
 CT_VOLSIZE=$DEFAULT_VOLSIZE
+CT_FILESYS=$DEFAULT_FILESYS
 CT_ATTACH=0
 
 # Parse arguments -- https://stackoverflow.com/a/14203146/33244
 POSITIONAL_ARGS=()
 while [[ "$#" -gt 0 ]]; do case $1 in
+    --filesys) CT_FILESYS="$3"; shift; shift;;
     --volsize) CT_VOLSIZE="$2"; shift; shift;;
     --attach) CT_ATTACH=1; shift; shift;;
 
@@ -73,7 +76,7 @@ zfs create -s -V $CT_VOLSIZE $DOCKER_RPOOL 1>&2
 sleep 1
 
 # Format it as ext4
-mkfs.ext4 $DOCKER_DEV 1>&2
+mkfs.$CT_FILESYS $DOCKER_DEV 1>&2
 
 # Set permissions
 TMP_MOUNT="/tmp/$DOCKER_VOL"
